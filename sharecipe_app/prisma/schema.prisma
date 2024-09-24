@@ -14,9 +14,22 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  sex       String   @default("unknown")
+  country   String   @default("unknown")
   createdAt DateTime @default(now())
+  recipes   Recipe[] // One-to-many relationship with Recipe
 }
 
+model Recipe {
+  id          Int    @id @default(autoincrement())
+  title       String
+  category    String
+  ingredients String
+  prepTime    Int
+  cookTime    Int
+  userId      Int // Foreign key to reference the User model
+  user        User   @relation(fields: [userId], references: [id]) // Relation field back to User
+}

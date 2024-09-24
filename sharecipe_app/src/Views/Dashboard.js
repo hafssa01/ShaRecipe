@@ -1,4 +1,5 @@
 import React from 'react';
+import AddRecipeForm from './AddRecipeForm.js';
 
 const Dashboard = () => {
   const email = localStorage.getItem('email'); // Retrieve email from local storage
@@ -7,7 +8,9 @@ const Dashboard = () => {
   return (
     <div>
       <h1>Welcome, {userName}!</h1>
-      {/* Other content for the dashboard */}
+      <p>This is your dashboard, Add your favourite recipe by filling out the form bellow:</p>
+      <AddRecipeForm />
+
     </div>
   );
 };
