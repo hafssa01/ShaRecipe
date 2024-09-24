@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Button, Col, Row, Toast, ToastContainer, Card } from 'react-bootstrap';
+import axios from 'axios';
 
 const AddRecipeForm = () => {
   const [formData, setFormData] = useState({
@@ -49,12 +50,17 @@ const AddRecipeForm = () => {
     e.preventDefault();
     const newErrors = validate(formData);
     setErrors(newErrors);
-
+  
     if (Object.keys(newErrors).length === 0) {
-      // Handle form submission (e.g., send data to server)
-      console.log('Form submitted successfully:', formData);
-      setShowToast(true);
-      setToastMessage('Recipe added successfully!');
+      axios.post('/api/recipes', formData)
+        .then((response) => {
+          console.log('Recipe added successfully:', response.data);
+          setShowToast(true);
+          setToastMessage('Recipe added successfully!');
+        })
+        .catch((error) => {
+          console.error(error);
+        });
     }
   };
 

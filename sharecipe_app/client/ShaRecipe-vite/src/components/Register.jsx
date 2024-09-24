@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Form, Button, Col, Row, Toast, ToastContainer, Card } from "react-bootstrap";
-import { FaGoogle } from 'react-icons/fa';
-import { GoogleLogin } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterForm = () => {
+  const navigate = useNavigate(); // Add this line
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -21,7 +22,6 @@ const RegisterForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Prevent non-alphabetic characters for first name, last name, and country
     if (name === 'firstName' || name === 'lastName' || name === 'country') {
       const alphabeticValue = value.replace(/[^a-zA-Z\s]+/g, '');
       setFormData({ ...formData, [name]: alphabeticValue });
@@ -29,28 +29,20 @@ const RegisterForm = () => {
       setFormData({ ...formData, [name]: value });
     }
 
-    // Update errors in real-time
     const newErrors = validate({ ...formData, [name]: value });
     setErrors(newErrors);
   };
 
   const validate = (formData) => {
     const newErrors = {};
-
-    // Check for required fields and validate format
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
+    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email || !emailRegex.test(formData.email)) {
       newErrors.email = 'Invalid email address';
     }
 
-    // Password and confirm password validation
     if (!formData.password || formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters long';
     }
@@ -58,13 +50,8 @@ const RegisterForm = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (!formData.sex) {
-      newErrors.sex = 'Please select your sex';
-    }
-
-    if (!formData.country.trim()) {
-      newErrors.country = 'Please select your country';
-    }
+    if (!formData.sex) newErrors.sex = 'Please select your sex';
+    if (!formData.country.trim()) newErrors.country = 'Please select your country';
 
     return newErrors;
   };
@@ -73,40 +60,46 @@ const RegisterForm = () => {
     e.preventDefault();
     const newErrors = validate(formData);
     setErrors(newErrors);
-
+  
     if (Object.keys(newErrors).length === 0) {
-      // Handle form submission (e.g., send data to server)
-      console.log('Form submitted successfully:', formData);
-      setShowToast(true);
-      setToastMessage('Registration successful!');
-    }
-  };
-
-  const handleGoogleSuccess = (response) => {
-    const { credential } = response;
-    console.log('Google token:', credential);
-
-    fetch('/api/auth/google', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token: credential }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Server response:', data);
-        // Handle successful response
-        // e.g., redirect to dashboard or show a success message
-        setShowToast(true);
-        setToastMessage('Google sign-in successful!');
+      setShowToast(false);
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       })
-      .catch(error => {
-        console.error('Error:', error);
-        // Handle error
-        setShowToast(true);
-        setToastMessage('Google sign-in failed!');
-      });
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            setErrors(data.errors || {});
+            setShowToast(true);
+            setToastMessage(data.error);
+          } else {
+            setFormData({
+              firstName: '',
+              lastName: '',
+              email: '',
+              password: '',
+              confirmPassword: '',
+              sex: '',
+              country: '',
+            });
+            setErrors({});
+            setShowToast(true);
+            setToastMessage('Registration successful!');
+
+            // Redirect to login after successful registration
+            navigate('/login'); // Add this line
+          }
+        })
+        .catch(error => {
+          console.error('Registration error:', error);
+          setShowToast(true);
+          setToastMessage('Registration failed, please try again!');
+        });
+    }
   };
 
   return (
@@ -238,21 +231,6 @@ const RegisterForm = () => {
           <p className="text-center mt-3">
             Already have an account? <a href="/login" className="text-primary">Login</a>
           </p>
-
-          <hr />
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={(error) => {
-              console.error('Google login error:', error);
-              setShowToast(true);
-              setToastMessage('Google sign-in failed!');
-            }}
-            render={({ onClick }) => (
-              <Button className="w-100 mt-2 btn-light border" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClick}>
-                <FaGoogle className="me-2" /> Sign up with Google
-              </Button>
-            )}
-          />
         </Form>
       </Card>
 

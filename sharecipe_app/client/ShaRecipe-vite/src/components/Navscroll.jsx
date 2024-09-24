@@ -14,7 +14,7 @@ function NavBar() {
         <Navbar.Collapse id="navbarScroll">
           <Nav className="mx-auto my-2 my-lg-0" navbarScroll>
             <Nav.Link href="#home">Home</Nav.Link>
-            <Nav.Link href="#recipes">Recipes</Nav.Link>
+            <Nav.Link href="/recipes">Recipes</Nav.Link>
           </Nav>
           <div className="d-flex">
             <Link to="/login">

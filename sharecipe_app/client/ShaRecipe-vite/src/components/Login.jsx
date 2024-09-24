@@ -1,75 +1,116 @@
-import React, { useState, useEffect } from 'react';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { Card, Button, Toast, ToastContainer } from 'react-bootstrap';
-import { FaGoogle } from 'react-icons/fa';
+import React, { useState } from "react";
+import { Form, Button, Toast, ToastContainer, Card } from "react-bootstrap";
 
 const LoginForm = () => {
-  const [user, setUser] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+
+  const [errors, setErrors] = useState({});
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser !== null) {
-      setUser(JSON.parse(storedUser));
-      setIsLoggedIn(true);
-    }
-  }, []);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
 
-  const handleLoginSuccess = (response) => {
-    if (response && response.credential) {
-      const details = jwtDecode(response.credential);
-      setUser(details);
-      setIsLoggedIn(true);
-      localStorage.setItem('user', JSON.stringify(details));
-    } else {
-      console.error('Invalid credential response');
-      setShowToast(true);
-      setToastMessage('Login failed!');
-    }
+    // Update errors in real-time
+    const newErrors = validate({ ...formData, [name]: value });
+    setErrors(newErrors);
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setIsLoggedIn(false);
-    localStorage.removeItem('user');
+  const validate = (formData) => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    }
+
+    return newErrors;
+  };
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = validate(formData);
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            setErrors(data.errors || {});
+            setShowToast(true);
+            setToastMessage(data.error);
+          } else {
+            // Reset form and errors
+            setFormData({ email: '', password: '' });
+            setErrors({});
+            setShowToast(true);
+            setToastMessage('Login successful!');
+          }
+        })
+        .catch(error => {
+          console.error('Login error:', error);
+          setShowToast(true);
+          setToastMessage('Login failed, please try again!');
+        });
+    }
   };
 
   return (
     <div className="d-flex justify-content-center align-items-center min-vh-100">
-      <Card className="p-4" style={{ width: '100%', maxWidth: '600px' }}>
-        {isLoggedIn && user ? (
-          <div>
-            <h2 className="text-center mb-4">Welcome, {user.name}!</h2>
-            <Button className="w-100" variant="primary" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <h2 className="text-center mb-4">Login</h2>
-            <GoogleOAuthProvider clientId="85792757464-4cer7qi0js1n067bhd9ca0ovcdcan1qg.apps.googleusercontent.com">
-              <GoogleLogin
-                onSuccess={handleLoginSuccess}
-                onError={() => {
-                  console.log('Login Failed');
-                  setShowToast(true);
-                  setToastMessage('Google sign-in failed!');
-                }}
-                render={({ onClick }) => (
-                  <Button
-                    className="w-100 mt-2 btn-light border"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    onClick={onClick}
-                  >
-                    <FaGoogle className="me-2" /> Sign in with Google
-                  </Button>
-                )}
-              />
-            </GoogleOAuthProvider>
-          </div>
-        )}
+      <Card className="p-4" style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 className="text-center mb-4">Login</h2>
+        <Form onSubmit={handleSubmit}>
+          <Form.Group controlId="email">
+            <Form.Label>Email</Form.Label>
+            <Form.Control
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              isInvalid={!!errors.email}
+            />
+            <Form.Control.Feedback type="invalid">
+              {errors.email}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <Form.Group controlId="password" className="mt-3">
+            <Form.Label>Password</Form.Label>
+            <Form.Control
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              isInvalid={!!errors.password}
+            />
+            <Form.Control.Feedback type="invalid">
+              {errors.password}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <Button className="mt-4 w-100" variant="primary" type="submit">
+            Login
+          </Button>
+
+          <p className="text-center mt-3">
+            Don't have an account? <a href="/register" className="text-primary">Register</a>
+          </p>
+        </Form>
       </Card>
 
       <ToastContainer position="top-end" className="p-3">
@@ -77,8 +118,7 @@ const LoginForm = () => {
           onClose={() => setShowToast(false)}
           show={showToast}
           delay={3000}
-          autohide
-        >
+          autohide>
           <Toast.Header>
             <strong className="me-auto">Notification</strong>
           </Toast.Header>
