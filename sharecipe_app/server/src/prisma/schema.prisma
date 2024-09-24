@@ -1,0 +1,33 @@
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  sex       String
+  country   String
+  createdAt DateTime  @default(now())
+  recipes   Recipe[]  // One-to-many relationship with Recipe
+}
+
+model Recipe {
+  id          Int       @id @default(autoincrement())
+  title       String
+  category    String
+  ingredients String   // You might want to use a JSON type for more complex structures
+  prepTime    DateTime
+  cookTime    DateTime
+  createdAt   DateTime  @default(now())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+}

@@ -1,9 +1,7 @@
 import './App.css';
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ForgotPasswordForm from './components/ForgotPassword';
 import RegisterForm from './components/Register';
-import ResetPasswordForm from './components/ResetPassword';
 import LoginForm from './components/Login';
 import Home from './pages/Homepage'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
